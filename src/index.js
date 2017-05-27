@@ -1,0 +1,59 @@
+/* ДЗ 6.1 - Асинхронность и работа с сетью */
+
+/**
+ * Функция должна создавать Promise, который должен быть resolved через seconds секунду после создания
+ *
+ * @param {number} seconds - количество секунд, через которое Promise должен быть resolved
+ * @return {Promise}
+ */
+function delayPromise(seconds) {
+    return new Promise(function (resolve, reject) {
+        setTimeout (function () {
+            resolve();
+        }, seconds);
+    });
+}
+
+/**
+ * Функция должна вернуть Promise, который должен быть разрешен массивом городов, загруженным из
+ * https://raw.githubusercontent.com/smelukov/citiesTest/master/cities.json
+ * Элементы полученного массива должны быть отсортированы по имени города
+ *
+ * @return {Promise<Array<{name: String}>>}
+ */
+function loadAndSortTowns() {
+    return new Promise(function (res, rej) {
+        let xhr = new XMLHttpRequest();
+
+        xhr.open(
+            'GET',
+            'https://raw.githubusercontent.com/smelukov/citiesTest/master/cities.json'
+        );
+        xhr.responseType = 'json';
+        xhr.send();
+
+        xhr.addEventListener('load', function () {
+            let arrayNameTown = [];
+            let array = [];
+            let result = xhr.response;
+
+            for (let i = 0; i < result.length; i++) {
+                arrayNameTown[i] = xhr.response[i];
+            }
+            arrayNameTown.forEach((town, i) => {
+                array[i] = town.name;
+            });
+
+            array.sort();
+
+            arrayNameTown.forEach((town, i) => {
+                town.name = array[i];
+            });
+            res(arrayNameTown);
+        });
+    });
+}
+export {
+    delayPromise,
+    loadAndSortTowns
+};

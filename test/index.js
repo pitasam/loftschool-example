@@ -11,10 +11,9 @@ import {
     deleteProperty,
     hasProperty,
     getEnumProps,
-    upperProps
-    // ,
-    // slice,
-    // createProxy
+    upperProps,
+    slice,
+    createProxy
 } from '../src/index';
 
 describe('ДЗ 3 - объекты и массивы', () => {
@@ -206,90 +205,90 @@ describe('ДЗ 3 - объекты и массивы', () => {
         });
     });
 
-    // describe('slice', () => {
-    //     it('общая проверка работоспособности', () => {
-    //         let array = [1, 2, 3, 4, 5, 6, 7];
-    //         let target = nativeSlice.call(array);
-    //         let result = slice(array);
-    //
-    //         assert.deepEqual(result, target);
-    //
-    //         target = nativeSlice.call(array, 0);
-    //         result = slice(array, 0);
-    //         assert.deepEqual(result, target);
-    //
-    //         target = nativeSlice.call(array, 0, 0);
-    //         result = slice(array, 0, 0);
-    //         assert.deepEqual(result, target);
-    //
-    //         target = nativeSlice.call(array, 0, 1);
-    //         result = slice(array, 0, 1);
-    //         assert.deepEqual(result, target);
-    //
-    //         target = nativeSlice.call(array, 0, 2);
-    //         result = slice(array, 0, 2);
-    //         assert.deepEqual(result, target);
-    //
-    //         target = nativeSlice.call(array, 0, 5);
-    //         result = slice(array, 0, 5);
-    //         assert.deepEqual(result, target);
-    //
-    //         target = nativeSlice.call(array, 0, -1);
-    //         result = slice(array, 0, -1);
-    //         assert.deepEqual(result, target);
-    //
-    //         target = nativeSlice.call(array, 0, -3);
-    //         result = slice(array, 0, -3);
-    //         assert.deepEqual(result, target);
-    //
-    //         target = nativeSlice.call(array, 0, -10000);
-    //         result = slice(array, 0, -10000);
-    //         assert.deepEqual(result, target);
-    //
-    //         target = nativeSlice.call(array, 3);
-    //         result = slice(array, 3);
-    //         assert.deepEqual(result, target);
-    //
-    //         target = nativeSlice.call(array, 3, -100);
-    //         result = slice(array, 3, -100);
-    //         assert.deepEqual(result, target);
-    //
-    //         target = nativeSlice.call(array, 3, 100);
-    //         result = slice(array, 3, 100);
-    //         assert.deepEqual(result, target);
-    //
-    //         target = nativeSlice.call(array, 3, 5);
-    //         result = slice(array, 3, 5);
-    //         assert.deepEqual(result, target);
-    //
-    //         target = nativeSlice.call(array, 9999);
-    //         result = slice(array, 9999);
-    //         assert.deepEqual(result, target);
-    //
-    //         target = nativeSlice.call(array, -9999);
-    //         result = slice(array, -9999);
-    //         assert.deepEqual(result, target);
-    //
-    //         target = nativeSlice.call(array, -9999, 4);
-    //         result = slice(array, -9999, 4);
-    //         assert.deepEqual(result, target);
-    //
-    //         target = nativeSlice.call(array, -9999, -4);
-    //         result = slice(array, -9999, -4);
-    //         assert.deepEqual(result, target);
-    //     });
-    // });
-    //
-    // describe('createProxy', () => {
-    //     it('должна вернуть Proxy, который возводит в квадрат любое записываемое значение', () => {
-    //         let obj = {};
-    //
-    //         obj = createProxy(obj);
-    //
-    //         obj.a = 2;
-    //         obj.b = 5;
-    //
-    //         assert.deepEqual(obj, { a: 4, b: 25 });
-    //     });
-    // });
+    describe('slice', () => {
+        it('общая проверка работоспособности', () => {
+            let array = [1, 2, 3, 4, 5, 6, 7];
+            let target = nativeSlice.call(array);
+            let result = slice(array);
+
+            assert.deepEqual(result, target);
+
+            target = nativeSlice.call(array, 0);
+            result = slice(array, 0);
+            assert.deepEqual(result, target);
+
+            target = nativeSlice.call(array, 0, 0);
+            result = slice(array, 0, 0);
+            assert.deepEqual(result, target);
+
+            target = nativeSlice.call(array, 0, 1);
+            result = slice(array, 0, 1);
+            assert.deepEqual(result, target);
+
+            target = nativeSlice.call(array, 0, 2);
+            result = slice(array, 0, 2);
+            assert.deepEqual(result, target);
+
+            target = nativeSlice.call(array, 0, 5);
+            result = slice(array, 0, 5);
+            assert.deepEqual(result, target);
+
+            target = nativeSlice.call(array, 0, -1);
+            result = slice(array, 0, -1);
+            assert.deepEqual(result, target);
+
+            target = nativeSlice.call(array, 0, -3);
+            result = slice(array, 0, -3);
+            assert.deepEqual(result, target);
+
+            target = nativeSlice.call(array, 0, -10000);
+            result = slice(array, 0, -10000);
+            assert.deepEqual(result, target);
+
+            target = nativeSlice.call(array, 3);
+            result = slice(array, 3);
+            assert.deepEqual(result, target);
+
+            target = nativeSlice.call(array, 3, -100);
+            result = slice(array, 3, -100);
+            assert.deepEqual(result, target);
+
+            target = nativeSlice.call(array, 3, 100);
+            result = slice(array, 3, 100);
+            assert.deepEqual(result, target);
+
+            target = nativeSlice.call(array, 3, 5);
+            result = slice(array, 3, 5);
+            assert.deepEqual(result, target);
+
+            target = nativeSlice.call(array, 9999);
+            result = slice(array, 9999);
+            assert.deepEqual(result, target);
+
+            target = nativeSlice.call(array, -9999);
+            result = slice(array, -9999);
+            assert.deepEqual(result, target);
+
+            target = nativeSlice.call(array, -9999, 4);
+            result = slice(array, -9999, 4);
+            assert.deepEqual(result, target);
+
+            target = nativeSlice.call(array, -9999, -4);
+            result = slice(array, -9999, -4);
+            assert.deepEqual(result, target);
+        });
+    });
+
+    describe('createProxy', () => {
+        it('должна вернуть Proxy, который возводит в квадрат любое записываемое значение', () => {
+            let obj = {};
+
+            obj = createProxy(obj);
+
+            obj.a = 2;
+            obj.b = 5;
+
+            assert.deepEqual(obj, { a: 4, b: 25 });
+        });
+    });
 });

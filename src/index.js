@@ -10,7 +10,7 @@ function delayPromise(seconds) {
     return new Promise(function (resolve, reject) {
         setTimeout (function () {
             resolve();
-        }, seconds);
+        }, seconds*1000);
     });
 }
 

@@ -68,17 +68,12 @@ function delegate(target, fn) {
  * @param {function} fn - обработчик
  */
 function once(target, fn) {
-    function onetime(node, type, callback) {
-        // create event
-        node.addEventListener(type, function(e) {
-            // remove event
-            e.target.removeEventListener(e.type, arguments.callee);
-            // call handler
+    let handler = function () {
+        fn();
+        target.removeEventListener('click', handler);
+    };
 
-            return callback(e);
-        });
-    }
-    onetime(target, 'click', fn);
+    target.addEventListener('click', handler);
 }
 
 export {

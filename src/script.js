@@ -119,31 +119,6 @@ new Promise(resolve => window.onload = resolve)
     .catch(e => alert('Ошибка: ' + e.message));
 
 
-
-// фильтр input левый
-// yourFriends.addEventListener('keyup', function(e){
-//      let friendDivs = document.getElementsByClassName('friend');
-//      console.log('friendDivs');
-//      console.log(friendDivs);
-//     //deleteTextNodesRecursive(friendsContainer);
-//     filterFriendsList = [];
-//
-//     // сравниваем строку с подстрокой (если true, добавляем в колонку)
-//     for (let i=0; i<fullName.length; i++){
-//         if(isMatching(fullName[i], e.target.value)){
-//             // //console.log(isMatching(fullName[i], e.target.value));
-//             // filterFriendsList.push(responseFriends.items[i]);
-//             // //console.log(friendsList[i]);
-//             friendDivs[i].style.display = 'flex';
-//         } else {
-//             friendDivs[i].style.display = 'none';
-//         }
-//     }
-//
-//     // objRight.items = filterFriendsList;
-//     // friends.innerHTML = templateFn(objRight);
-// });
-
 // фильтр input левый
 yourFriends.addEventListener('keyup', function(e){
     //let friendDivs = document.getElementsByClassName('friend');
@@ -206,29 +181,62 @@ let moveAt;
 
 document.addEventListener('mousedown', function(e) {
     let friendDiv = e.target.closest('.friend');
+    let plus = e.target.closest('.plus');
 
-    if(friendDiv){
-        let movingFriend = e.target.closest('.friend');
-        let coords = getCoords(movingFriend);
-        let shiftX = e.pageX - coords.left;
-        let shiftY = e.pageY - coords.top;
+    if(plus){
+        let parentPlus = plus.parentNode,
+            friendsCol = parentPlus.parentNode,
+            idFriendsCol = friendsCol.getAttribute('id');
+        console.log('parentPlus');
+        console.log(parentPlus);
+        console.log('idFriendsCol');
+        console.log(idFriendsCol);
+        console.log('1111');
+        console.log(idFriendsCol == 'friends');
+
+        if(idFriendsCol == 'friends'){
+            let cloneMovingBlock = friendDiv.cloneNode(true);
+            friendsColRight.appendChild(cloneMovingBlock);
+            cloneMovingBlock.style.position = 'relative';
+            cloneMovingBlock.style.top = '0';
+            cloneMovingBlock.style.left = '0';
+            //rightFriendsList.push(movingBlock);
+            deleteElem(friendDiv);
+        } else {
+            let cloneMovingBlock = friendDiv.cloneNode(true);
+            friends.appendChild(cloneMovingBlock);
+            cloneMovingBlock.style.position = 'relative';
+            cloneMovingBlock.style.top = '0';
+            cloneMovingBlock.style.left = '0';
+            //rightFriendsList.push(movingBlock);
+            deleteElem(friendDiv);
+        }
 
 
-        movingFriend.ondragstart = function() {
-            return false;
-        };
-        movingBlock = movingFriend;
-        movingBlock.style.position = 'absolute';
-        movingBlock.style.zIndex = '100';
-        //document.body.appendChild(movingFriend);
+    } else {
+        if(friendDiv){
+            let movingFriend = e.target.closest('.friend');
+            let coords = getCoords(movingFriend);
+            let shiftX = e.pageX - coords.left;
+            let shiftY = e.pageY - coords.top;
 
-        moveAt = function(e) {
-            movingFriend.style.left = e.pageX - shiftX + 'px';
-            movingFriend.style.top = e.pageY - shiftY + 'px';
-        };
-        moveAt(e);
 
-        document.addEventListener('mousemove', moveAt);
+            movingFriend.ondragstart = function() {
+                return false;
+            };
+            movingBlock = movingFriend;
+            movingBlock.style.position = 'absolute';
+            movingBlock.style.zIndex = '100';
+            //document.body.appendChild(movingFriend);
+
+            moveAt = function(e) {
+                movingFriend.style.left = e.pageX - shiftX + 'px';
+                movingFriend.style.top = e.pageY - shiftY + 'px';
+            };
+            moveAt(e);
+
+            document.addEventListener('mousemove', moveAt);
+        }
     }
 
 });
@@ -236,47 +244,81 @@ document.addEventListener('mousedown', function(e) {
 document.addEventListener('mouseup', function(e) {
     console.log('!!!!!!!!!!!!!!!!!');
     console.log(e);
-    if (e.target.closest('.friend')){
-        let coordRightColFriends = friendsColRight.getBoundingClientRect();
-        if (e.pageX > coordRightColFriends.left && e.pageX < coordRightColFriends.right && e.pageY > coordRightColFriends.top && e.pageY < coordRightColFriends.bottom){
-            console.log('00000000000000');
-            console.log(typeof movingBlock);
+    let plus = e.target.closest('.plus');
 
-            let cloneMovingBlock = movingBlock.cloneNode(true);
+    if(!plus){
+        if (e.target.closest('.friend')){
+            let coordRightColFriends = friendsColRight.getBoundingClientRect();
+            let coordLeftColFriends = friends.getBoundingClientRect();
+            if (e.pageX > coordRightColFriends.left && e.pageX < coordRightColFriends.right && e.pageY > coordRightColFriends.top && e.pageY < coordRightColFriends.bottom){
+                console.log('00000000000000');
+                console.log(typeof movingBlock);
 
-            friendsColRight.appendChild(cloneMovingBlock);
+                let cloneMovingBlock = movingBlock.cloneNode(true);
 
-            cloneMovingBlock.style.position = 'relative';
-            cloneMovingBlock.style.top = '0';
-            cloneMovingBlock.style.left = '0';
+                friendsColRight.appendChild(cloneMovingBlock);
 
-            // movingBlock.style.position = 'relative';
-            // movingBlock.style.top = '0';
-            // movingBlock.style.left = '0';
+                cloneMovingBlock.style.position = 'relative';
+                cloneMovingBlock.style.top = '0';
+                cloneMovingBlock.style.left = '0';
+
+                // movingBlock.style.position = 'relative';
+                // movingBlock.style.top = '0';
+                // movingBlock.style.left = '0';
 
 
-            // let el = document.createElement("div");
-            // el.innerHTML = "<h1>Dfcz!!!!</h1>";
-            // console.log(typeof el);
-            //
-            // friendsColRight.appendChild(el);
+                // let el = document.createElement("div");
+                // el.innerHTML = "<h1>Dfcz!!!!</h1>";
+                // console.log(typeof el);
+                //
+                // friendsColRight.appendChild(el);
 
-            rightFriendsList.push(movingBlock);
-            deleteElem(movingBlock);
+                rightFriendsList.push(movingBlock);
+                deleteElem(movingBlock);
 
-        } else {
-            movingBlock.style.position = 'relative';
-            movingBlock.style.top = '0';
-            movingBlock.style.left = '0';
+            } else if(e.pageX > coordLeftColFriends.left && e.pageX < coordLeftColFriends.right && e.pageY > coordLeftColFriends.top && e.pageY < coordLeftColFriends.bottom){
+                let cloneMovingBlock = movingBlock.cloneNode(true);
+
+                friends.appendChild(cloneMovingBlock);
+
+                cloneMovingBlock.style.position = 'relative';
+                cloneMovingBlock.style.top = '0';
+                cloneMovingBlock.style.left = '0';
+
+                //rightFriendsList.push(movingBlock);
+                deleteElem(movingBlock);
+            } else {
+                movingBlock.style.position = 'relative';
+                movingBlock.style.top = '0';
+                movingBlock.style.left = '0';
+            }
+
+            document.removeEventListener('mousemove', moveAt);
         }
-
-        document.removeEventListener('mousemove', moveAt);
     }
+
 
 });
 
 
 let storage = localStorage;
-save.addEventListener('click', function () {
-    storage.rightFriends = JSON.stringify(rightFriendsList);
+save.addEventListener('click', function (e) {
+    e.preventDefault();
+
+    let leftColFriend = document.getElementById('friends'),
+        rightColFriend = document.getElementById('friendsColRight'),
+        leftFriends = leftColFriend.children,
+        rightFriends = rightColFriend.children;
+
+    console.log(leftFriends);
+    console.log(rightFriends);
+
+    storage.friends = JSON.stringify(
+        leftFriends
+    );
+    // console.log('storage.friends.leftFriends');
+    // console.log(storage.friends.leftFriends);
+    let data = JSON.parse(storage.friends);
+    console.log('data');
+    console.log(data);
 });

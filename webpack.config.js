@@ -15,8 +15,8 @@ loaders.push({
 
 module.exports = {
     entry: {
-        main: './src/index.js',
-        cookie: './src/cookie.js'
+        main: './src/index.js'
+       // cookie: './src/cookie.js'
     },
     output: {
         filename: '[name].[hash].js',

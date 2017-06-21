@@ -1,0 +1,7 @@
+MouseEvent {isTrusted: true,
+screenX: -857,
+screenY: 620,
+ clientX: 509,
+ clientY: 320…}altKey: falsebubbles: truebutton: 0buttons: 0cancelBubble: falsecancelable: trueclientX: 509clientY: 320composed: truectrlKey: falsecurrentTarget: nulldefaultPrevented: falsedetail: 0eventPhase: 0fromElement: nullisTrusted: truelayerX: 86layerY: 30metaKey: falsemovementX: 0movementY: 0offsetX: 31offsetY: 9pageX: 509pageY: 320path: Array(13)relatedTarget: nullreturnValue: truescreenX: -857screenY: 620shiftKey: falsesourceCapabilities: InputDeviceCapabilitiessrcElement: div.friend__nametarget: div.friend__nametimeStamp: 118533.00000000001toElement: div.friend__nametype: "mouseup"view: Windowwhich: 1x: 509y: 320__proto__: MouseEvent
+
+

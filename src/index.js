@@ -1,317 +1,340 @@
-//  вспомогательные функции
+let map;
+let balloon;
+let placemark;
+let coords;
+let BalloonContentLayout;
+let clusterer;
+let address;
+let geoObjects = [];
 
-//  проверка наличия подстроки в строке
-function isMatching(full, chunk) {
-    full = full.toLowerCase();
-    chunk = chunk.toLowerCase();
-    let resultIndexOf = full.indexOf(chunk);
+// если в localStorage что-то есть
+// создаем плэйсмарки и заносим в кластер
+function isLS() {
+    // если в localStorage что-то есть
+    if (localStorage.length) {
+        let storageKey = [];
 
-    return resultIndexOf != -1;
+        // получаем все ключи localStorage'а
+        for (let i = 0; i < localStorage.length; i++) {
+            storageKey[i] = localStorage.key(i);
+        }
+
+        // из ключей делаем координаты
+        let points = storageKey.map(function (coord) {
+            let coords = coord.split(',');
+
+            return [+coords[0], +coords[1]];
+        });
+
+        // создаем плэйсмарки и добавляем в geoObjects
+        for (let i = 0; i < points.length; i++) {
+            placemark = setPlacemark(points[i]);
+            geoObjects[i] = placemark;
+        }
+
+        // добавляем плэйсмарки в кластер
+        clusterer.add(geoObjects);
+        map.setBounds(clusterer.getBounds(), {
+            checkZoomRange: true
+        });
+    }
 }
 
-// получить координаты
-function getCoords(elem) {
-    let box = elem.getBoundingClientRect();
+// новая метка
+function setPlacemark(coordsPlacemark) {
+    let coordsString = coordsPlacemark.toString();
+    let place;
+    let address;
+    let review;
 
-    return {
-        top: box.top + pageYOffset,
-        left: box.left + pageXOffset
+    // данные для балуна кластера
+    if (localStorage[coordsString]) {
+        let storage = JSON.parse(localStorage[coordsString]);
+
+        place = storage[0].place;
+        address = storage[0].address;
+        review = storage[0].comment;
+    }
+
+    // создаем плэйсмарку
+    placemark = new ymaps.Placemark(coordsPlacemark, {
+        balloonContentPlace: place,
+        balloonContentAddress: address,
+        balloonContentReviews: review,
+        balloonContentCoords: coordsPlacemark
+    },
+        {
+            balloonPanelMaxMapArea: 0,
+            balloonContentLayout: BalloonContentLayout,
+            balloonCloseButton: false,
+            clustererBalloonCloseButton: true,
+            hideIconOnBalloonOpen: false
+        }
+    );
+
+    // добавляем событие на плэйсмарку
+    placemark.events.add('click', function (e) {
+        // берем координаты плэйсмарки
+        coords = e.originalEvent.target.geometry.getCoordinates();
+    });
+
+    return placemark;
+}
+
+function clearInput() {
+    let input = document.querySelectorAll('.review__input');
+
+    for (let i=0; i<input.length; i++) {
+        input[i].value = '';
+    }
+}
+
+function setCommentsInLS(coords, address, name, place, comment) {
+    let array;
+    let balloonValues = {
+        'address': address,
+        'name': name,
+        'place': place,
+        'comment': comment,
+        'coords': coords
     };
-}
 
-// удаление элемента из DOM дерева
-function deleteElem(elem) {
-    elem.parentNode.removeChild(elem);
-}
-
-// vkApi
-function vkApi(method, options) {
-    if (!options.v) {
-        options.v = '5.64';
+    if (!localStorage[coords.toString()]) {
+        localStorage[coords.toString()] = JSON.stringify([]);
     }
 
-    return new Promise((resolve, reject) => {
-        VK.api(method, options, data => {
-            if (data.error) {
-                reject(new Error(data.error.error_msg));
-            } else {
-                resolve(data.response);
-            }
-        });
-    });
-}
-// vkInit
-function vkInit() {
-    return new Promise((resolve, reject) => {
-        VK.init({
-            apiId: 6066695
-        });
+    array = JSON.parse(localStorage[coords.toString()]);
 
-        VK.Auth.login(data => {
-            if (data.session) {
-                resolve();
-            } else {
-                reject(new Error('Не удалось авторизоваться'));
-            }
-        }, 2);
-    });
+    array.push(balloonValues);
+    localStorage[coords.toString()] = JSON.stringify(array);
 }
 
-// сохраниение информации из элемента friend в объект
-function pushInObject(elem) {
-    let childrenElem = elem.children,
-        pic = childrenElem[0].children,
-        src = pic[0].getAttribute('src'),
-        fullName = childrenElem[1].innerText,
-        name = fullName.split(' ');
+function setCommentsInDiv(name, place, comment) {
+    let reviews = document.getElementById('reviews');
+    let nameSpan = document.createElement('span');
+    let placeSpan = document.createElement('span');
+    let commentDiv = document.createElement('div');
+    let commentWrapper = document.createElement('div');
 
-    return {
-        first_name: name[0],
-        last_name: name[1],
-        photo_200: src
-    }
+    placeSpan.setAttribute('style', 'color:red; margin-left:10px');
+
+    nameSpan.innerHTML = name;
+    placeSpan.innerHTML = place;
+    commentDiv.innerHTML = comment;
+    commentWrapper.appendChild(nameSpan);
+    commentWrapper.appendChild(placeSpan);
+    commentWrapper.appendChild(commentDiv);
+    reviews.appendChild(commentWrapper);
 }
 
-// добавление блока friend в одну колонку + удаление из другой
-// в какую колонку добавление, какой блок
-function pushFriendInCol(column, friendDiv) {
-    let cloneMovingBlock = friendDiv.cloneNode(true);
+// получение адреса
+function geocode(coords) {
+    return ymaps.geocode(coords, { kind: 'house' }).then(result => {
+        let firstGeoObject = result.geoObjects.get(0);
 
-    // добавляем клонированный блок friend в правую колонку
-    column.appendChild(cloneMovingBlock);
-    cloneMovingBlock.style.position = 'relative';
-    cloneMovingBlock.style.top = '0';
-    cloneMovingBlock.style.left = '0';
+        address = [
+            // Название населенного пункта или вышестоящее административно-территориальное образование.
+            firstGeoObject.getCountry(), firstGeoObject.getAddressLine()
+            // Получаем путь до топонима, если метод вернул null, запрашиваем наименование здания.
+        ].filter(Boolean).join(', ');
 
-    // удаляем перетаскиваемый блок friend
-    deleteElem(friendDiv);
+        return address;
+    })
 }
 
-// шаблон друга
-let template = `
-{{#each items}}
-    <div class="friend">
-        <div class="friend__pic-wrapper">
-            <img src="{{photo_200}}" class="friend__pic">
-        </div>
-        <div class="friend__name">{{first_name}} {{last_name}}</div>
-        <div class="friend__plus plus">
-            <div class="plus__ver"></div>
-            <div class="plus__gor"></div>
-        </div>
-    </div>
-{{/each}}
-`;
-
-let templateLeft = `
-{{#each itemsRight}}
-    <div class="friend">
-        <div class="friend__pic-wrapper">
-            <img src="{{photo_200}}" class="friend__pic">
-        </div>
-        <div class="friend__name">{{first_name}} {{last_name}}</div>
-        <div class="friend__plus plus">
-            <div class="plus__ver"></div>
-            <div class="plus__gor"></div>
-        </div>
-    </div>
-{{/each}}
-`;
-
-// инициализация переменных
-let headerInfo = document.querySelector('#headerInfo');
-let yourFriends = document.querySelector('#yourFriends');
-let friendsInList = document.querySelector('#friendsInList');
-let save = document.querySelector('#save');
-let wrapper = document.querySelector('.container');
-let templateFn = Handlebars.compile(template);
-let templateRightFn = Handlebars.compile(templateLeft);
-let friendsList = [];
-let objectFriends = {};
-let filterFriendsList = [];
-let fullName = [];
-
-let leftColFriends = document.getElementById('leftColFriends'),
-    rightColFriends = document.getElementById('rightColFriends');
-
-// инициализируем переменные для перетаскивания
-let movingBlock;
-let moveAt;
-
-let storage = localStorage;
-
-// после загрузки страницы (точка входа приложения)
+// точка входа
 new Promise(resolve => window.onload = resolve)
+    .then(() => new Promise(resolve => ymaps.ready(resolve)))
     .then(() => {
-        // если в localStorage ничего нет
-        return new Promise((resolve, reject) => {
-            if (!localStorage.length) {
-                resolve();
-            } else { // если в localStorage сохранины данные
-                let data = JSON.parse(storage.data);
-
-                headerInfo.innerText = JSON.parse(storage.name);
-                leftColFriends.innerHTML = templateFn(data);
-                rightColFriends.innerHTML = templateRightFn(data);
-                reject();
-            }
+        // Создает экземпляр карты и привязывает его к созданному контейнеру
+        map = new ymaps.Map('map', {
+            center: [55.650625, 37.62708],
+            zoom: 11,
+            controls: []
+        }, {
+            searchControlProvider: 'yandex#search'
         });
-    })
-    .then(() => vkInit()) // инициализировали приложение
-    .then(() => vkApi('users.get', { name_case: 'gen' })) // запросили имя пользователя
-    .then(response => { // вставили имя пользователя на страницу
-        headerInfo.textContent = `Друзья ${response[0].first_name} ${response[0].last_name}`;
-    })
-    .then(() => vkApi('friends.get', { fields: 'photo_200' })) // запросили друзей пользователя ФИ + аватар
-    .then(function (response) {
-        leftColFriends.innerHTML = templateFn(response);
 
-        // ответ сервера занесли в массив
-        for (let i=0; i<response.items.length; i++) {
-            friendsList[i] = response.items[i];
-            fullName[i] = response.items[i].first_name + ' ' + response.items[i].last_name;
-        }
-    });
-    // .catch(e => alert('Ошибка: ' + e.message));
+        // Создаем собственный макет с информацией о выбранном геообъекте.
+        let customItemContentLayout = ymaps.templateLayoutFactory.createClass(
+            '<img src="src/close.png" class="balloon__close" id="close" style="width: 15px; height: 15px; display: inline-block; float: right">' +
+            // Флаг "raw" означает, что данные вставляют "как есть" без экранирования html.
+            '<h2 class="balloon__header" id="placeCor">{{ properties.balloonContentPlace|raw }}</h2>' +
+            '<a href="#" class="balloon__body" id="addressCor">{{ properties.balloonContentAddress|raw }}</a> <br>' +
+            '<div class="balloon__footer" id="reviewsCor">{{ properties.balloonContentReviews|raw }}</div>' +
+            '<div class="balloon__coords" id="coords" style="display: none;">{{ properties.balloonContentCoords|raw }}</div>'
+            ,
+            {
+                build: function () {
+                    // Сначала вызываем метод build родительского класса.
+                    BalloonContentLayout.superclass.build.call(this);
 
-// фильтр input левый
-yourFriends.addEventListener('keyup', function(e) {
-    let friendDivs = leftColFriends.children;
+                    let addressCor = document.getElementById('addressCor');
+                    let close = document.getElementById('close');
 
-    filterFriendsList = [];
+                    addressCor.addEventListener('click', this.openBalloon);
+                    close.addEventListener('click', this.closeHeandler);
+                },
 
-    // сравниваем строку с подстрокой (если true - отображаем, если false - скрываем)
-    for (let i=0; i<friendDivs.length; i++) {
-        if (isMatching(friendDivs[i].innerText, e.target.value)) {
-            friendDivs[i].style.display = 'flex';
-        } else {
-            friendDivs[i].style.display = 'none';
-        }
-    }
-});
+                clear: function () {
+                    let addressCor = document.getElementById('addressCor');
+                    let close = document.getElementById('close');
 
-// фильтр input правый
-friendsInList.addEventListener('keyup', function(e) {
-    let friendDivs = rightColFriends.children;
+                    addressCor.removeEventListener('click', this.openBalloon);
+                    close.removeEventListener('click', this.closeHeandler);
 
-    filterFriendsList = [];
+                    BalloonContentLayout.superclass.clear.call(this);
+                },
 
-    // сравниваем строку с подстрокой (если true - отображаем, если false - скрываем)
-    for (let i=0; i<friendDivs.length; i++) {
-        if (isMatching(friendDivs[i].innerText, e.target.value)) {
-            friendDivs[i].style.display = 'flex';
-        } else {
-            friendDivs[i].style.display = 'none';
-        }
-    }
-});
+                closeHeandler: function () {
+                    // закрываем балун
+                    map.balloon.close();
+                },
 
-// перетаскивание
-wrapper.addEventListener('mousedown', function(e) {
-    let friendDiv = e.target.closest('.friend'),
-        plus = e.target.closest('.plus');
+                openBalloon: function (e) {
+                    e.preventDefault();
+                    let coordPlacemarkString = document.getElementById('coords').innerText;
+                    let coordPlacemark = coordPlacemarkString.split(',');
 
-    // клик по плюсу
-    if (plus) {
-        let plusParent = plus.parentNode,
-            friendsCol = plusParent.parentNode,
-            idFriendsCol = friendsCol.getAttribute('id');
-
-        // левая колонка друзей
-        if (idFriendsCol == 'leftColFriends') {
-            pushFriendInCol(rightColFriends, friendDiv);
-        } else {
-        // правая колонка друзей
-            pushFriendInCol(leftColFriends, friendDiv);
-        }
-    } else {
-    // клик вне плюса
-        // клик на блоке friend
-        if (friendDiv) {
-            let movingFriend = e.target.closest('.friend');
-            let coords = getCoords(movingFriend);
-            let shiftX = e.pageX - coords.left;
-            let shiftY = e.pageY - coords.top;
-
-            // убираем drag картинки по умолчанию
-            movingFriend.ondragstart = function() {
-                return false;
-            };
-            movingBlock = movingFriend;
-            movingBlock.style.position = 'absolute';
-            movingBlock.style.zIndex = '100';
-
-            moveAt = function(e) {
-                movingFriend.style.left = e.pageX - shiftX + 'px';
-                movingFriend.style.top = e.pageY - shiftY + 'px';
-            };
-            moveAt(e);
-
-            document.addEventListener('mousemove', moveAt);
-        }
-    }
-});
-
-wrapper.addEventListener('mouseup', function(e) {
-    let plus = e.target.closest('.plus');
-
-    // клик произошел не на плюсе
-    if (!plus) {
-        if (e.target.closest('.friend')) {
-            let coordRightColFriends = rightColFriends.getBoundingClientRect(),
-                coordLeftColFriends = leftColFriends.getBoundingClientRect();
-
-            if (e.pageX > coordRightColFriends.left &&
-                e.pageX < coordRightColFriends.right &&
-                e.pageY > coordRightColFriends.top &&
-                e.pageY < coordRightColFriends.bottom) {
-
-                pushFriendInCol(rightColFriends, movingBlock);
-
-            } else if (e.pageX > coordLeftColFriends.left &&
-                e.pageX < coordLeftColFriends.right &&
-                e.pageY > coordLeftColFriends.top &&
-                e.pageY < coordLeftColFriends.bottom) {
-
-                pushFriendInCol(leftColFriends, movingBlock);
-
-            } else {
-                movingBlock.style.position = 'relative';
-                movingBlock.style.top = '0';
-                movingBlock.style.left = '0';
+                    // по координатам плэйсмарки открываем балун
+                    coords = coordPlacemark;
+                    map.balloon.close();
+                    map.balloon.open(coords);
+                }
             }
+        );
 
-            document.removeEventListener('mousemove', moveAt);
-        }
-    }
-});
+        // создаем макет балуна
+        BalloonContentLayout = ymaps.templateLayoutFactory.createClass(
+            '<div class="balloon__header" style="width: 100%; padding: 3px 5px;">' +
+            '<div class="balloon__title" id="place" style="width: 90%; display: inline-block; font-size: 11px; height: 25px; line-height: 1.2;"></div>' +
+            '<img src="src/close.png" class="balloon__close" id="close" style="width: 15px; height: 15px; display: inline-block; float: right"></div>' +
+            '</div>' +
+            '<div class="balloon__review review" style="padding: 5px">' +
+            '<div class="review__result" id="reviews" style="display: block; margin-bottom: 5px; box-sizing: border-box; border: 1px solid lightgrey; height: 150px; overflow: scroll; width: 350px;"></div>' +
+            '<div class="review__title">Ваш отзыв</div>' +
+            '<input type="text" title="" class="review__input" id="reviewName" style="display: block; width: 100%; margin-bottom: 5px; box-sizing: border-box">' +
+            '<input type="text" title="" class="review__input" id="reviewPlace" style="display: block; width: 100%; margin-bottom: 5px; box-sizing: border-box">' +
+            '<textarea title="" class="review__input" id="reviewNew" style="display: block; width: 100%; margin-bottom: 5px; box-sizing: border-box"></textarea>' +
+            '<button class="review__button button" id="button" style="float: right;">Добавить</button>' +
+            '</div>',
+            {
 
-// кнопка сохранить
-save.addEventListener('click', function (e) {
-    e.preventDefault();
+                build: function () {
+                    // Сначала вызываем метод build родительского класса.
+                    BalloonContentLayout.superclass.build.call(this);
+                    // А затем выполняем дополнительные действия.
+                    let button = document.getElementById('button');
+                    let close = document.getElementById('close');
+                    let place = document.getElementById('place');
+                    let resGeocode = geocode(coords);
 
-    let leftArray =[],
-        rightArray =[];
+                    // получение адресса и вставка в шапку
+                    resGeocode.then(res => {
+                        address = res;
+                        place.innerText = address;
+                    });
 
-    let leftFriends = leftColFriends.children,
-        rightFriends = rightColFriends.children;
+                    let coordsString = coords.toString();
 
-    for (let i=0; i<leftFriends.length; i++) {
-        let obj = pushInObject(leftFriends[i]);
+                    // заполнение балуна контентом
+                    if (localStorage[coordsString]) {
+                        let storage = JSON.parse(localStorage[coordsString]);
 
-        leftArray.push(obj);
-    }
+                        for (let i=0; i<storage.length; i++) {
+                            setCommentsInDiv(
+                                storage[i].name,
+                                storage[i].place,
+                                storage[i].comment
+                            );
+                        }
+                    }
 
-    for (let i=0; i<rightFriends.length; i++) {
-        let obj = pushInObject(rightFriends[i]);
+                    button.addEventListener('click', this.setPlacemark);
+                    close.addEventListener('click', this.closeHeandler);
+                },
 
-        rightArray.push(obj);
-    }
+                // Аналогично переопределяем функцию clear, чтобы снять
+                // прослушивание клика при удалении макета с карты.
+                clear: function () {
+                    let button = document.getElementById('button');
+                    let close = document.getElementById('close');
 
-    // запись в объект
-    objectFriends.items = leftArray;
-    objectFriends.itemsRight = rightArray;
+                    button.removeEventListener('click', this.setPlacemark);
+                    close.removeEventListener('click', this.closeHeandler);
+                    BalloonContentLayout.superclass.clear.call(this);
+                },
 
-    storage.data = JSON.stringify(objectFriends);
-    storage.name = JSON.stringify(headerInfo.innerText);
-});
+                closeHeandler: function () {
+                    map.balloon.close();
+                },
+
+                setPlacemark: function () {
+                    let inputs = document.querySelectorAll('.review__input');
+                    let inputContent = [];
+                    let flag = false;
+
+                    // если в LS нет по данному ключу значения
+                    if (!localStorage[coords.toString()]) {
+                        flag = true;
+                    }
+
+                    for (let i=0; i<inputs.length; i++) {
+                        inputContent[i] = inputs[i].value;
+                    }
+
+                    // вставляем данные в LS
+                    setCommentsInLS(coords, address, inputContent[0], inputContent[1], inputContent[2]);
+
+                    // вставляем данные в балун
+                    setCommentsInDiv(inputContent[0], inputContent[1], inputContent[2]);
+
+                    // добавляем плэйсмарку
+                    placemark = setPlacemark(coords);
+
+                    // добавляем плэйсмарку
+                    if (flag) {
+                        clusterer.add(placemark);
+                    }
+
+                    // чистим инпуты
+                    clearInput();
+                }
+            });
+
+        // создаем балун
+        balloon = new ymaps.Balloon(map);
+
+        // создаём кластер
+        clusterer = new ymaps.Clusterer({
+            clusterDisableClickZoom: true,
+            clusterBalloonContentLayout: 'cluster#balloonCarousel',
+            clusterBalloonItemContentLayout: customItemContentLayout,
+            clusterBalloonCycling: false,
+            clusterBalloonPagerType: 'marker',
+            clusterBalloonPagerSize: 5
+        });
+
+        // если в localStorage что-то есть
+        // создаем плэйсмарки и заносим в кластер
+        isLS();
+
+        // задаем карте опции для балуна
+        map.options.set({
+            balloonContentLayout: BalloonContentLayout,
+            balloonPanelMaxMapArea: 0,
+            balloonCloseButton: false
+        });
+
+        // добавляем кластер на карту
+        map.geoObjects.add(clusterer);
+
+        // клик по карте
+        map.events.add('click', function (e) {
+            // получаем координаты
+            coords = e.get('coords');
+
+            // открываем балун в полученных координатах
+            map.balloon.open(coords);
+        });
+    });
